@@ -278,7 +278,7 @@ export default function Landing() {
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '1rem', marginBottom: '3rem' }}>
             {[
               { name: 'Free', price: '$0', period: 'forever', features: ['1 active client', 'Basic client portal', 'Project status', 'No credit card'], hot: false },
-              { name: 'Starter', price: '$15', period: '/month', features: ['5 active clients', 'File uploads', 'Milestone tracking', 'Invoice management', 'Email notifications'], hot: false },
+              { name: 'Starter', price: '$15', period: '/month', features: ['5 active clients', 'File uploads', 'Milestone tracking', 'Invoice management', ], hot: false },
               { name: 'Pro', price: '$25', period: '/month', features: ['Unlimited clients', 'Everything in Starter', 'Custom branding', 'Priority support', 'Analytics'], hot: true },
             ].map((plan, i) => (
               <Reveal key={plan.name} delay={i * 0.1}>

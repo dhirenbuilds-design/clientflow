@@ -5,6 +5,7 @@ import { useParams } from 'react-router-dom'
 export default function Portal() {
   const { token } = useParams()
   const [project, setProject] = useState<any>(null)
+  const [freelancerEmail, setFreelancerEmail] = useState('')
   const [milestones, setMilestones] = useState<any[]>([])
   const [files, setFiles] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -19,6 +20,10 @@ export default function Portal() {
       if (!data) { setNotFound(true); setLoading(false); return }
       setProject(data)
       if (data.approval_status) setApproved(data.approval_status)
+
+      const { data: profile } = await supabase.from('profiles').select('email').eq('user_id', data.user_id).single()
+      if (profile) setFreelancerEmail(profile.email)
+
       const { data: ms } = await supabase.from('milestones').select('*').eq('project_id', data.id).order('created_at', { ascending: true })
       setMilestones(ms || [])
       const { data: fs } = await supabase.from('files').select('*').eq('project_id', data.id)
@@ -28,6 +33,24 @@ export default function Portal() {
     load()
   }, [token])
 
+  const sendNotificationEmail = async (type: string, note: string) => {
+    if (!freelancerEmail) return
+    const subject = type === 'approved'
+      ? `✅ ${project.client_name} approved "${project.title}"`
+      : `🔄 ${project.client_name} requested a revision on "${project.title}"`
+    const message = type === 'approved'
+      ? `<h2>Great news!</h2><p><b>${project.client_name}</b> just approved the project <b>"${project.title}"</b> on ClientFlow.</p>`
+      : `<h2>Revision requested</h2><p><b>${project.client_name}</b> requested a revision on <b>"${project.title}"</b>:</p><p style="background:#f3f4f6;padding:12px;border-radius:8px;">${note}</p>`
+    try {
+      await fetch('/.netlify/functions/send-email', {
+        method: 'POST',
+        body: JSON.stringify({ to: freelancerEmail, subject, message })
+      })
+    } catch (e) {
+      console.log('Email failed silently', e)
+    }
+  }
+
   const handleApproval = async (type: string) => {
     await supabase.from('projects').update({
       approval_status: type,
@@ -35,6 +58,7 @@ export default function Portal() {
     }).eq('id', project.id)
     setApproved(type)
     setShowRevision(false)
+    sendNotificationEmail(type, revisionNote)
   }
 
   if (loading) return (
@@ -119,13 +143,13 @@ export default function Portal() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {files.map(file => (
                 <div key={file.id} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.04)' }}>
-                  <div style={{ fontSize: '1.5rem' }}>📄</div>
+                  <div style={{ fontSize: '1.5rem' }}>{file.type === 'link' ? '🔗' : '📄'}</div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>{file.name}</div>
-                    <div style={{ color: '#475569', fontSize: '0.78rem' }}>{(file.size / 1024).toFixed(1)} KB</div>
+                    <div style={{ color: '#475569', fontSize: '0.78rem' }}>{file.type === 'link' ? 'External link' : `${(file.size / 1024).toFixed(1)} KB`}</div>
                   </div>
                   <a href={file.url} target="_blank" rel="noreferrer" style={{ padding: '0.4rem 0.9rem', backgroundColor: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', color: '#60A5FA', borderRadius: '8px', fontSize: '0.78rem', fontWeight: '600', textDecoration: 'none' }}>
-                    Download
+                    {file.type === 'link' ? 'Open →' : 'Download'}
                   </a>
                 </div>
               ))}
