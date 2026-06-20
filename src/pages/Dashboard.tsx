@@ -41,33 +41,20 @@ export default function Dashboard() {
   return (
     <div style={{ backgroundColor: '#060910', minHeight: '100vh', fontFamily: 'Inter, sans-serif', color: '#F8FAFC' }}>
 
-      {/* GLOW */}
       <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
         <div style={{ position: 'absolute', top: '-10%', left: '30%', width: '600px', height: '600px', background: 'radial-gradient(circle, rgba(59,130,246,0.06) 0%, transparent 70%)', borderRadius: '50%' }} />
       </div>
 
-      {/* NAV */}
       <nav style={{ padding: isMobile ? '1rem 1.25rem' : '1rem 2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', position: 'sticky', top: 0, backgroundColor: 'rgba(6,9,16,0.9)', backdropFilter: 'blur(20px)', zIndex: 100 }}>
         <div style={{ fontSize: '1.2rem', fontWeight: '900', background: 'linear-gradient(135deg, #60A5FA, #A78BFA)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>ClientFlow</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           {!isMobile && <span style={{ color: '#334155', fontSize: '0.85rem' }}>{profile?.email}</span>}
 
-          {/* ── BRANDING LINK (new) ── */}
-          <Link
-            to="/branding"
-            style={{
-              padding: '0.45rem 1rem',
-              backgroundColor: profile?.plan === 'pro' ? 'rgba(139,92,246,0.12)' : 'rgba(255,255,255,0.04)',
-              color: profile?.plan === 'pro' ? '#A78BFA' : '#64748B',
-              border: `1px solid ${profile?.plan === 'pro' ? 'rgba(139,92,246,0.25)' : 'rgba(255,255,255,0.07)'}`,
-              borderRadius: '8px',
-              fontWeight: '600',
-              fontSize: '0.82rem',
-              cursor: 'pointer',
-              textDecoration: 'none',
-              whiteSpace: 'nowrap' as const
-            }}
-          >
+          <Link to="/analytics" style={{ padding: '0.45rem 1rem', backgroundColor: 'rgba(255,255,255,0.04)', color: '#64748B', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '8px', fontWeight: '600', fontSize: '0.82rem', textDecoration: 'none', whiteSpace: 'nowrap' as const }}>
+            📊 Analytics
+          </Link>
+
+          <Link to="/branding" style={{ padding: '0.45rem 1rem', backgroundColor: profile?.plan === 'pro' ? 'rgba(139,92,246,0.12)' : 'rgba(255,255,255,0.04)', color: profile?.plan === 'pro' ? '#A78BFA' : '#64748B', border: `1px solid ${profile?.plan === 'pro' ? 'rgba(139,92,246,0.25)' : 'rgba(255,255,255,0.07)'}`, borderRadius: '8px', fontWeight: '600', fontSize: '0.82rem', textDecoration: 'none', whiteSpace: 'nowrap' as const }}>
             {profile?.plan === 'pro' ? '🎨 Branding' : '🔒 Branding'}
           </Link>
 
@@ -79,7 +66,6 @@ export default function Dashboard() {
 
       <div style={{ padding: isMobile ? '2rem 1.25rem' : '3rem 2.5rem', maxWidth: '1100px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
 
-        {/* WELCOME */}
         <div style={{ marginBottom: '3rem' }}>
           <h1 style={{ fontSize: isMobile ? '1.75rem' : '2.5rem', fontWeight: '900', letterSpacing: '-0.03em', marginBottom: '0.5rem' }}>
             Good to see you, {firstName} 👋
@@ -87,7 +73,6 @@ export default function Dashboard() {
           <p style={{ color: '#475569', fontSize: '0.95rem' }}>Here's your ClientFlow overview</p>
         </div>
 
-        {/* STATS */}
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(3,1fr)', gap: '1rem', marginBottom: '3rem' }}>
           {[
             { label: 'Active Projects', value: projects.length, color: '#3B82F6', icon: '📁' },
@@ -102,7 +87,6 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* EARLY BIRD BANNER */}
         {profile?.plan === 'free' && (
           <div style={{ background: 'linear-gradient(135deg, rgba(59,130,246,0.1), rgba(99,102,241,0.1))', border: '1px solid rgba(99,102,241,0.2)', borderRadius: '16px', padding: '1.5rem 2rem', marginBottom: '3rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
             <div>
@@ -115,7 +99,6 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* PRODUCT CARDS */}
         <div style={{ marginBottom: '3rem' }}>
           <h2 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '1.25rem', letterSpacing: '-0.02em' }}>Your Tools</h2>
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2,1fr)', gap: '1.25rem' }}>
@@ -142,7 +125,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* RECENT PROJECTS */}
         {projects.length > 0 && (
           <div style={{ marginBottom: '3rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
@@ -156,16 +138,13 @@ export default function Dashboard() {
                     <div style={{ fontWeight: '700', fontSize: '0.95rem', marginBottom: '0.2rem' }}>{p.title}</div>
                     <div style={{ color: '#475569', fontSize: '0.82rem' }}>{p.client_name} · {p.client_email}</div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <span style={{ backgroundColor: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', color: '#60A5FA', padding: '0.2rem 0.75rem', borderRadius: '999px', fontSize: '0.75rem', fontWeight: '600' }}>{p.status}</span>
-                  </div>
+                  <span style={{ backgroundColor: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', color: '#60A5FA', padding: '0.2rem 0.75rem', borderRadius: '999px', fontSize: '0.75rem', fontWeight: '600' }}>{p.status}</span>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* EMPTY STATE */}
         {projects.length === 0 && onboardings.length === 0 && (
           <div style={{ textAlign: 'center', padding: '4rem 2rem', backgroundColor: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '20px' }}>
             <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🚀</div>
