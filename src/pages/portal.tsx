@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
 import { useParams } from 'react-router-dom'
+import PortalCard from './PortalCard'
 
 export default function Portal() {
   const { token } = useParams()
@@ -14,6 +15,13 @@ export default function Portal() {
   const [showRevision, setShowRevision] = useState(false)
   const [revisionNote, setRevisionNote] = useState('')
 
+  const [brandColor, setBrandColor] = useState('#3B82F6')
+  const [brandSecondary, setBrandSecondary] = useState('#6366F1')
+  const [logoUrl, setLogoUrl] = useState('')
+  const [businessName, setBusinessName] = useState('')
+  const [isPro, setIsPro] = useState(false)
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark')
+
   useEffect(() => {
     const load = async () => {
       const { data } = await supabase.from('projects').select('*').eq('unique_token', token).single()
@@ -21,8 +29,21 @@ export default function Portal() {
       setProject(data)
       if (data.approval_status) setApproved(data.approval_status)
 
-      const { data: profile } = await supabase.from('profiles').select('email').eq('user_id', data.user_id).single()
-      if (profile) setFreelancerEmail(profile.email)
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('email, logo_url, brand_color, brand_secondary, business_name, plan, portal_theme')
+        .eq('user_id', data.user_id)
+        .single()
+
+      if (profile) {
+        setFreelancerEmail(profile.email)
+        if (profile.brand_color) setBrandColor(profile.brand_color)
+        if (profile.brand_secondary) setBrandSecondary(profile.brand_secondary)
+        if (profile.logo_url) setLogoUrl(profile.logo_url)
+        if (profile.business_name) setBusinessName(profile.business_name)
+        setIsPro(profile.plan === 'pro')
+        setTheme(profile.portal_theme === 'light' ? 'light' : 'dark')
+      }
 
       const { data: ms } = await supabase.from('milestones').select('*').eq('project_id', data.id).order('created_at', { ascending: true })
       setMilestones(ms || [])
@@ -61,6 +82,11 @@ export default function Portal() {
     sendNotificationEmail(type, revisionNote)
   }
 
+  const isLight = theme === 'light'
+  const pageColors = isLight
+    ? { bg: '#f7f7f9', cardBg: '#ffffff', cardBorder: 'rgba(20,20,30,0.06)', text: '#15161a', textMuted: '#6b6f76', textFaint: '#c5c8ce', navBg: 'rgba(255,255,255,0.85)', innerBg: '#fafafb' }
+    : { bg: '#060910', cardBg: 'rgba(255,255,255,0.02)', cardBorder: 'rgba(255,255,255,0.06)', text: '#F8FAFC', textMuted: '#475569', textFaint: '#1E293B', navBg: 'rgba(6,9,16,0.9)', innerBg: 'rgba(255,255,255,0.03)' }
+
   if (loading) return (
     <div style={{ backgroundColor: '#060910', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, sans-serif', color: '#F8FAFC' }}>
       Loading your portal...
@@ -81,54 +107,100 @@ export default function Portal() {
   const progress = milestones.length > 0 ? Math.round((completedCount / milestones.length) * 100) : 0
 
   return (
-    <div style={{ backgroundColor: '#060910', minHeight: '100vh', fontFamily: 'Inter, sans-serif', color: '#F8FAFC' }}>
+    <div style={{ backgroundColor: pageColors.bg, minHeight: '100vh', fontFamily: 'Inter, sans-serif', color: pageColors.text }}>
 
-      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
-        <div style={{ position: 'absolute', top: '-10%', left: '20%', width: '600px', height: '600px', background: 'radial-gradient(circle, rgba(59,130,246,0.06) 0%, transparent 70%)', borderRadius: '50%' }} />
-      </div>
+      {/* NAV */}
+      <nav style={{ padding: '1rem 2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${pageColors.cardBorder}`, backgroundColor: pageColors.navBg, backdropFilter: 'blur(20px)', position: 'sticky', top: 0, zIndex: 100 }}>
 
-      <nav style={{ padding: '1rem 2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', backgroundColor: 'rgba(6,9,16,0.9)', backdropFilter: 'blur(20px)', position: 'sticky', top: 0, zIndex: 100 }}>
-        <div style={{ fontSize: '1.1rem', fontWeight: '900', color: '#3B82F6' }}>ClientFlow</div>
-        <div style={{ fontSize: '0.8rem', color: '#475569' }}>Client Portal</div>
-      </nav>
-
-      <div style={{ maxWidth: '700px', margin: '0 auto', padding: '3rem 2rem', position: 'relative', zIndex: 1 }}>
-
-        <div style={{ marginBottom: '3rem' }}>
-          <div style={{ display: 'inline-block', backgroundColor: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', color: '#60A5FA', padding: '0.3rem 0.9rem', borderRadius: '999px', fontSize: '0.75rem', fontWeight: '700', marginBottom: '1rem' }}>
-            {project.status?.toUpperCase()}
-          </div>
-          <h1 style={{ fontSize: '2.5rem', fontWeight: '900', letterSpacing: '-0.03em', marginBottom: '0.5rem' }}>{project.title}</h1>
-          <p style={{ color: '#475569', fontSize: '0.9rem' }}>Prepared for <span style={{ color: '#94A3B8', fontWeight: '600' }}>{project.client_name}</span></p>
+        {/* Logo: Pro = their brand, Free = ClientFlow */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {isPro && logoUrl ? (
+            <>
+              <img src={logoUrl} alt="Logo" style={{ height: '32px', objectFit: 'contain' }} />
+              {businessName && <span style={{ fontSize: '1rem', fontWeight: '800', color: pageColors.text }}>{businessName}</span>}
+            </>
+          ) : isPro && businessName ? (
+            <div style={{ fontSize: '1.1rem', fontWeight: '900', color: brandColor }}>{businessName}</div>
+          ) : (
+            <div style={{ fontSize: '1.1rem', fontWeight: '900', background: 'linear-gradient(135deg, #60A5FA, #A78BFA)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              ClientFlow
+            </div>
+          )}
         </div>
 
-        {milestones.length > 0 && (
-          <div style={{ backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '20px', padding: '2rem', marginBottom: '1.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-              <h3 style={{ fontSize: '0.75rem', fontWeight: '700', color: '#475569', letterSpacing: '0.1em' }}>OVERALL PROGRESS</h3>
-              <span style={{ fontSize: '0.85rem', fontWeight: '800', color: '#3B82F6' }}>{progress}%</span>
-            </div>
-            <div style={{ backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '999px', height: '6px', overflow: 'hidden' }}>
-              <div style={{ width: `${progress}%`, height: '100%', background: 'linear-gradient(135deg, #3B82F6, #6366F1)', borderRadius: '999px', transition: 'width 0.5s ease' }} />
-            </div>
-            <p style={{ color: '#475569', fontSize: '0.8rem', marginTop: '0.75rem' }}>{completedCount} of {milestones.length} milestones completed</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <button
+            onClick={() => setTheme(isLight ? 'dark' : 'light')}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '0.4rem 0.8rem', borderRadius: '999px', cursor: 'pointer', border: `1px solid ${pageColors.cardBorder}`, backgroundColor: pageColors.cardBg, color: pageColors.textMuted, fontSize: '0.78rem', fontWeight: '600' }}
+          >
+            {isLight ? '🌙 Dark' : '☀️ Light'}
+          </button>
+          <div style={{ fontSize: '0.8rem', color: pageColors.textMuted }}>Client Portal</div>
+        </div>
+      </nav>
+
+      <div style={{ maxWidth: '700px', margin: '0 auto', padding: '3rem 2rem' }}>
+
+        <div style={{ marginBottom: '1.5rem' }}>
+          <PortalCard
+            brandColor={brandColor}
+            brandSecondary={brandSecondary}
+            logoUrl={logoUrl}
+            businessName={businessName}
+            theme={theme}
+            isPro={isPro}
+            projectTitle={project.title}
+            clientName={project.client_name}
+            status={project.status}
+            milestoneLabel={`${completedCount} of ${milestones.length} milestones completed (${progress}%)`}
+            onApprove={approved === 'approved' || approved === 'revision' ? undefined : () => handleApproval('approved')}
+            onRequestRevision={approved === 'approved' || approved === 'revision' ? undefined : () => setShowRevision(true)}
+          />
+        </div>
+
+        {(approved === 'approved' || approved === 'revision' || showRevision) && (
+          <div style={{ backgroundColor: pageColors.cardBg, border: `1px solid ${pageColors.cardBorder}`, borderRadius: '20px', padding: '2rem', marginBottom: '1.5rem', textAlign: 'center' }}>
+            {approved === 'approved' ? (
+              <div style={{ color: '#22C55E', fontWeight: '800', fontSize: '1.1rem' }}>✅ You've approved this project!</div>
+            ) : approved === 'revision' ? (
+              <div style={{ color: '#F59E0B', fontWeight: '800', fontSize: '1.1rem' }}>🔄 Revision requested! We'll get back to you soon.</div>
+            ) : showRevision ? (
+              <div style={{ textAlign: 'left' }}>
+                <h3 style={{ fontSize: '0.75rem', fontWeight: '700', color: pageColors.textMuted, letterSpacing: '0.1em', marginBottom: '1rem' }}>REQUEST REVISION</h3>
+                <textarea
+                  placeholder="What would you like us to change or improve?"
+                  value={revisionNote}
+                  onChange={e => setRevisionNote(e.target.value)}
+                  rows={4}
+                  style={{ width: '100%', padding: '1rem', backgroundColor: pageColors.innerBg, border: `1px solid ${pageColors.cardBorder}`, borderRadius: '12px', color: pageColors.text, fontSize: '0.9rem', outline: 'none', resize: 'none', boxSizing: 'border-box' as const, marginBottom: '1rem' }}
+                />
+                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                  <button onClick={() => setShowRevision(false)} style={{ padding: '0.7rem 1.5rem', backgroundColor: 'transparent', color: pageColors.textMuted, border: `1px solid ${pageColors.cardBorder}`, borderRadius: '10px', fontWeight: '600', cursor: 'pointer' }}>
+                    Cancel
+                  </button>
+                  <button onClick={() => handleApproval('revision')} disabled={!revisionNote} style={{ padding: '0.7rem 1.5rem', backgroundColor: 'rgba(239,68,68,0.1)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '10px', fontWeight: '700', cursor: 'pointer', opacity: !revisionNote ? 0.5 : 1 }}>
+                    Send Revision Request
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </div>
         )}
 
         {milestones.length > 0 && (
-          <div style={{ backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '20px', padding: '2rem', marginBottom: '1.5rem' }}>
-            <h3 style={{ fontSize: '0.75rem', fontWeight: '700', color: '#475569', letterSpacing: '0.1em', marginBottom: '1.5rem' }}>MILESTONES</h3>
+          <div style={{ backgroundColor: pageColors.cardBg, border: `1px solid ${pageColors.cardBorder}`, borderRadius: '20px', padding: '2rem', marginBottom: '1.5rem' }}>
+            <h3 style={{ fontSize: '0.75rem', fontWeight: '700', color: pageColors.textMuted, letterSpacing: '0.1em', marginBottom: '1.5rem' }}>MILESTONES</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {milestones.map((m, i) => (
                 <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: m.status === 'completed' ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.05)', border: `2px solid ${m.status === 'completed' ? '#22C55E' : 'rgba(255,255,255,0.1)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', flexShrink: 0 }}>
+                  <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: m.status === 'completed' ? 'rgba(34,197,94,0.15)' : (isLight ? '#f0f0f0' : 'rgba(255,255,255,0.05)'), border: `2px solid ${m.status === 'completed' ? '#22C55E' : pageColors.cardBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', flexShrink: 0 }}>
                     {m.status === 'completed' ? '✓' : i + 1}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: '600', fontSize: '0.9rem', color: m.status === 'completed' ? '#94A3B8' : '#F8FAFC', textDecoration: m.status === 'completed' ? 'line-through' : 'none' }}>{m.title}</div>
-                    {m.due_date && <div style={{ color: '#475569', fontSize: '0.78rem', marginTop: '0.1rem' }}>Due {new Date(m.due_date).toLocaleDateString()}</div>}
+                    <div style={{ fontWeight: '600', fontSize: '0.9rem', color: m.status === 'completed' ? pageColors.textMuted : pageColors.text, textDecoration: m.status === 'completed' ? 'line-through' : 'none' }}>{m.title}</div>
+                    {m.due_date && <div style={{ color: pageColors.textMuted, fontSize: '0.78rem', marginTop: '0.1rem' }}>Due {new Date(m.due_date).toLocaleDateString()}</div>}
                   </div>
-                  <span style={{ fontSize: '0.72rem', fontWeight: '700', padding: '0.2rem 0.6rem', borderRadius: '999px', backgroundColor: m.status === 'completed' ? 'rgba(34,197,94,0.1)' : 'rgba(59,130,246,0.1)', color: m.status === 'completed' ? '#4ADE80' : '#60A5FA', border: `1px solid ${m.status === 'completed' ? 'rgba(34,197,94,0.2)' : 'rgba(59,130,246,0.2)'}` }}>
+                  <span style={{ fontSize: '0.72rem', fontWeight: '700', padding: '0.2rem 0.6rem', borderRadius: '999px', backgroundColor: m.status === 'completed' ? 'rgba(34,197,94,0.1)' : `${brandColor}18`, color: m.status === 'completed' ? '#4ADE80' : brandColor, border: `1px solid ${m.status === 'completed' ? 'rgba(34,197,94,0.2)' : `${brandColor}35`}` }}>
                     {m.status}
                   </span>
                 </div>
@@ -138,17 +210,17 @@ export default function Portal() {
         )}
 
         {files.length > 0 && (
-          <div style={{ backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '20px', padding: '2rem', marginBottom: '1.5rem' }}>
-            <h3 style={{ fontSize: '0.75rem', fontWeight: '700', color: '#475569', letterSpacing: '0.1em', marginBottom: '1.5rem' }}>FILES</h3>
+          <div style={{ backgroundColor: pageColors.cardBg, border: `1px solid ${pageColors.cardBorder}`, borderRadius: '20px', padding: '2rem', marginBottom: '1.5rem' }}>
+            <h3 style={{ fontSize: '0.75rem', fontWeight: '700', color: pageColors.textMuted, letterSpacing: '0.1em', marginBottom: '1.5rem' }}>FILES</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {files.map(file => (
-                <div key={file.id} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                <div key={file.id} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', backgroundColor: pageColors.innerBg, borderRadius: '12px', border: `1px solid ${pageColors.cardBorder}` }}>
                   <div style={{ fontSize: '1.5rem' }}>{file.type === 'link' ? '🔗' : '📄'}</div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>{file.name}</div>
-                    <div style={{ color: '#475569', fontSize: '0.78rem' }}>{file.type === 'link' ? 'External link' : `${(file.size / 1024).toFixed(1)} KB`}</div>
+                    <div style={{ color: pageColors.textMuted, fontSize: '0.78rem' }}>{file.type === 'link' ? 'External link' : `${(file.size / 1024).toFixed(1)} KB`}</div>
                   </div>
-                  <a href={file.url} target="_blank" rel="noreferrer" style={{ padding: '0.4rem 0.9rem', backgroundColor: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', color: '#60A5FA', borderRadius: '8px', fontSize: '0.78rem', fontWeight: '600', textDecoration: 'none' }}>
+                  <a href={file.url} target="_blank" rel="noreferrer" style={{ padding: '0.4rem 0.9rem', backgroundColor: `${brandColor}18`, border: `1px solid ${brandColor}35`, color: brandColor, borderRadius: '8px', fontSize: '0.78rem', fontWeight: '600', textDecoration: 'none' }}>
                     {file.type === 'link' ? 'Open →' : 'Download'}
                   </a>
                 </div>
@@ -157,64 +229,28 @@ export default function Portal() {
           </div>
         )}
 
-        <div style={{ backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '20px', padding: '2rem', marginBottom: '1.5rem', textAlign: 'center' }}>
-          <h3 style={{ fontSize: '0.75rem', fontWeight: '700', color: '#475569', letterSpacing: '0.1em', marginBottom: '1rem' }}>DELIVERABLE APPROVAL</h3>
-          {approved === 'approved' ? (
-            <div style={{ color: '#22C55E', fontWeight: '800', fontSize: '1.1rem' }}>✅ You've approved this project!</div>
-          ) : approved === 'revision' ? (
-            <div style={{ color: '#F59E0B', fontWeight: '800', fontSize: '1.1rem' }}>🔄 Revision requested! We'll get back to you soon.</div>
-          ) : !showRevision ? (
-            <>
-              <p style={{ color: '#475569', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Happy with the work? Approve it or request a revision.</p>
-              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-                <button onClick={() => handleApproval('approved')} style={{ padding: '0.85rem 2rem', background: 'linear-gradient(135deg, #22C55E, #16A34A)', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '700', fontSize: '0.95rem', cursor: 'pointer' }}>
-                  ✓ Approve Project
-                </button>
-                <button onClick={() => setShowRevision(true)} style={{ padding: '0.85rem 2rem', backgroundColor: 'rgba(239,68,68,0.1)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '12px', fontWeight: '700', fontSize: '0.95rem', cursor: 'pointer' }}>
-                  ✏️ Request Revision
-                </button>
-              </div>
-            </>
-          ) : (
-            <div style={{ textAlign: 'left' }}>
-              <textarea
-                placeholder="What would you like us to change or improve?"
-                value={revisionNote}
-                onChange={e => setRevisionNote(e.target.value)}
-                rows={4}
-                style={{ width: '100%', padding: '1rem', backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', color: '#F8FAFC', fontSize: '0.9rem', outline: 'none', resize: 'none', boxSizing: 'border-box' as const, marginBottom: '1rem' }}
-              />
-              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-                <button onClick={() => setShowRevision(false)} style={{ padding: '0.7rem 1.5rem', backgroundColor: 'transparent', color: '#475569', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', fontWeight: '600', cursor: 'pointer' }}>
-                  Cancel
-                </button>
-                <button onClick={() => handleApproval('revision')} disabled={!revisionNote} style={{ padding: '0.7rem 1.5rem', backgroundColor: 'rgba(239,68,68,0.1)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '10px', fontWeight: '700', cursor: 'pointer', opacity: !revisionNote ? 0.5 : 1 }}>
-                  Send Revision Request
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div style={{ backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '20px', padding: '2rem', marginBottom: '1.5rem' }}>
-          <h3 style={{ fontSize: '0.75rem', fontWeight: '700', color: '#475569', letterSpacing: '0.1em', marginBottom: '1.5rem' }}>YOUR DETAILS</h3>
+        <div style={{ backgroundColor: pageColors.cardBg, border: `1px solid ${pageColors.cardBorder}`, borderRadius: '20px', padding: '2rem' }}>
+          <h3 style={{ fontSize: '0.75rem', fontWeight: '700', color: pageColors.textMuted, letterSpacing: '0.1em', marginBottom: '1.5rem' }}>YOUR DETAILS</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: '#475569', fontSize: '0.9rem' }}>Name</span>
-              <span style={{ color: '#F8FAFC', fontWeight: '600', fontSize: '0.9rem' }}>{project.client_name}</span>
+              <span style={{ color: pageColors.textMuted, fontSize: '0.9rem' }}>Name</span>
+              <span style={{ color: pageColors.text, fontWeight: '600', fontSize: '0.9rem' }}>{project.client_name}</span>
             </div>
             {project.client_email && (
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#475569', fontSize: '0.9rem' }}>Email</span>
-                <span style={{ color: '#F8FAFC', fontWeight: '600', fontSize: '0.9rem' }}>{project.client_email}</span>
+                <span style={{ color: pageColors.textMuted, fontSize: '0.9rem' }}>Email</span>
+                <span style={{ color: pageColors.text, fontWeight: '600', fontSize: '0.9rem' }}>{project.client_email}</span>
               </div>
             )}
           </div>
         </div>
 
-        <div style={{ textAlign: 'center', marginTop: '3rem', color: '#1E293B', fontSize: '0.8rem' }}>
-          Powered by <span style={{ color: '#3B82F6', fontWeight: '700' }}>ClientFlow</span>
-        </div>
+        {/* Powered by — Free plan only */}
+        {!isPro && (
+          <div style={{ textAlign: 'center', padding: '2rem 0 0.5rem', fontSize: '0.78rem', color: pageColors.textMuted }}>
+            Powered by <span style={{ color: '#3B82F6', fontWeight: '700' }}>ClientFlow</span>
+          </div>
+        )}
 
       </div>
     </div>

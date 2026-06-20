@@ -51,6 +51,26 @@ export default function Dashboard() {
         <div style={{ fontSize: '1.2rem', fontWeight: '900', background: 'linear-gradient(135deg, #60A5FA, #A78BFA)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>ClientFlow</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           {!isMobile && <span style={{ color: '#334155', fontSize: '0.85rem' }}>{profile?.email}</span>}
+
+          {/* ── BRANDING LINK (new) ── */}
+          <Link
+            to="/branding"
+            style={{
+              padding: '0.45rem 1rem',
+              backgroundColor: profile?.plan === 'pro' ? 'rgba(139,92,246,0.12)' : 'rgba(255,255,255,0.04)',
+              color: profile?.plan === 'pro' ? '#A78BFA' : '#64748B',
+              border: `1px solid ${profile?.plan === 'pro' ? 'rgba(139,92,246,0.25)' : 'rgba(255,255,255,0.07)'}`,
+              borderRadius: '8px',
+              fontWeight: '600',
+              fontSize: '0.82rem',
+              cursor: 'pointer',
+              textDecoration: 'none',
+              whiteSpace: 'nowrap' as const
+            }}
+          >
+            {profile?.plan === 'pro' ? '🎨 Branding' : '🔒 Branding'}
+          </Link>
+
           <button onClick={logout} style={{ padding: '0.45rem 1rem', backgroundColor: 'rgba(255,255,255,0.04)', color: '#64748B', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '8px', fontWeight: '600', fontSize: '0.82rem', cursor: 'pointer' }}>
             Sign out
           </button>

@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard'
 import Cliento from './pages/Cliento'
 import ClientoProject from './pages/ClientoProject'
 import Portal from './pages/portal'
+import Branding from './pages/Branding'
 import AuthGate from './AuthGate'
 
 export default function App() {
@@ -18,6 +19,7 @@ export default function App() {
       <Route path="/cliento" element={<AuthGate><Cliento /></AuthGate>} />
       <Route path="/cliento/:id" element={<AuthGate><ClientoProject /></AuthGate>} />
       <Route path="/portal/:token" element={<Portal />} />
+      <Route path="/branding" element={<AuthGate><Branding /></AuthGate>} />
     </Routes>
   )
 }
